@@ -191,7 +191,7 @@ class Multisite_Posts_Counter extends WP_Widget {
 			return;
 		}
 
-		$title = apply_filters( 'widget_title', $args['title'] );
+		$title = apply_filters( 'widget_title', $instance['title'] );
 
 		$widget_string = $args['before_widget'];
 
@@ -295,6 +295,15 @@ EOL;
 	}
 
 	/**
+	 * Fired when the plugin is deactivated.
+	 *
+	 * @param boolean $network_wide True if WPMU superadmin uses "Network Activate" action, false if WPMU is disabled or plugin is activated on an individual blog.
+	 */
+	public static function deactivate( $network_wide ) {
+		$this->flush_widget_cache();
+	}
+
+	/**
 	 * Registers and enqueues admin-specific styles.
 	 */
 	public function register_admin_styles() : void {
@@ -345,3 +354,5 @@ EOL;
 }
 
 add_action( 'widgets_init', [ 'Multisite_Posts_Counter', 'register_widget' ] );
+
+register_deactivation_hook( __FILE__, [ 'Multisite_Posts_Counter', 'deactivate' ] );
