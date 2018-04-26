@@ -51,7 +51,7 @@ class Multisite_Posts_Counter extends WP_Widget {
 	 *
 	 * @var int
 	 */
-	const REFRESH_INTERVAL = 60;
+	const REFRESH_INTERVAL = 5;
 
 	/**
 	 * Specifies the classname and description, instantiates the widget,
@@ -182,7 +182,7 @@ class Multisite_Posts_Counter extends WP_Widget {
 		$info_cache   = wp_cache_get( $this->get_widget_slug(), 'info' );
 
 		$refresh_interval = self::REFRESH_INTERVAL;
-		$endpoint         = self::WIDGET_SLUG . '/' . self::ENDPOINT_VERSION;
+		$endpoint         = self::WIDGET_SLUG . '/' . self::ENDPOINT_VERSION . '/site/' ;
 
 		if ( ! is_array( $widget_cache ) ) {
 			$widget_cache = [];
@@ -327,7 +327,9 @@ EOL;
 		wp_enqueue_script(
 			$this->get_widget_slug() . '-script',
 			plugins_url( 'js/widget.js', __FILE__ ),
-			[ 'jquery' ]
+			[ 'jquery' ],
+			null,
+			true
 		);
 	}
 
