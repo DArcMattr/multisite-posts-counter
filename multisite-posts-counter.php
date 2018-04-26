@@ -74,6 +74,29 @@ class Multisite_Posts_Counter extends WP_Widget {
 		add_action( 'save_post', [ $this, 'flush_widget_cache' ] );
 		add_action( 'deleted_post', [ $this, 'flush_widget_cache' ] );
 		add_action( 'switch_theme', [ $this, 'flush_widget_cache' ] );
+		add_action( 'rest_api_init', [ $this, 'rest_api_init' ] );
+	}
+
+	/**
+	 * Hook into REST API
+	 */
+	public function rest_api_init() : void {
+		register_rest_route(
+			'multisite-posts-counter/v1', '/site(:?/(?P<blog_id>\d+))?', [
+				'methods'  => WP_REST_Server::READABLE,
+				'callback' => function( WP_REST_Request $request ) : array {
+					$blog_id = intval( $request->get_param('blog_id') );
+					return self::get_site_info( $blog_id );
+				},
+				'args'     => [
+					'blog_id' => [
+						'validate_callback' => function( $param, $request, $key ) {
+							return is_numeric( $param );
+						},
+					],
+				],
+			]
+		);
 	}
 
 	/**
@@ -81,16 +104,16 @@ class Multisite_Posts_Counter extends WP_Widget {
 	 *
 	 * Return number of posts, users, URL.
 	 *
-	 * @param int $site_id Network Site ID for site.
+	 * @param int $blog_id Network Site ID for site.
 	 *
 	 * @return array
 	 */
-	public static function get_site_info( int $site_id = 0 ) : array {
+	public static function get_site_info( int $blog_id = 0 ) : array {
 		$query = [
 			'public' => '1',
 		];
 
-		$out_sites = wp_cache_get( SELF::WIDGET_SLUG, 'rest' );
+		$out_sites = wp_cache_get( self::WIDGET_SLUG, 'rest' );
 
 		if ( ! is_array( $out_sites ) ) {
 			$out_sites = [];
@@ -98,8 +121,8 @@ class Multisite_Posts_Counter extends WP_Widget {
 			return $out_sites;
 		}
 
-		if ( 0 !== $site_id ) {
-			$query['site__in'] = $site_id;
+		if ( 0 !== $blog_id ) {
+			$query['site__in'] = intval( $blog_id );
 		}
 
 		$sites = get_sites( $query );
