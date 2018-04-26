@@ -304,27 +304,6 @@ EOL;
 	}
 
 	/**
-	 * Registers and enqueues admin-specific styles.
-	 */
-	public function register_admin_styles() : void {
-		wp_enqueue_style(
-			$this->get_widget_slug() . '-admin-styles',
-			plugins_url( 'css/admin.css', __FILE__ )
-		);
-	}
-
-	/**
-	 * Registers and enqueues admin-specific JavaScript.
-	 */
-	public function register_admin_scripts() : void {
-		wp_enqueue_script(
-			$this->get_widget_slug() . '-admin-script',
-			plugins_url( 'js/admin.js', __FILE__ ),
-			[ 'jquery' ]
-		);
-	}
-
-	/**
 	 * Registers and enqueues widget-specific styles.
 	 */
 	public function register_widget_styles() : void {
