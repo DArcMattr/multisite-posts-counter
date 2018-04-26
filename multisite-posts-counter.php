@@ -90,7 +90,7 @@ class Multisite_Posts_Counter extends WP_Widget {
 			'public' => '1',
 		];
 
-		$out_sites = wp_cache_get( $this->get_widget_slug(), 'rest' );
+		$out_sites = wp_cache_get( SELF::WIDGET_SLUG, 'rest' );
 
 		if ( ! is_array( $out_sites ) ) {
 			$out_sites = [];
@@ -108,23 +108,22 @@ class Multisite_Posts_Counter extends WP_Widget {
 			foreach ( $sites as $site ) {
 				$blog_id = $site->blog_id;
 
-
-				$user_query = new \WP_User_Query( [ 'blog_id' => $blog_id, ] );
+				$user_query                          = new \WP_User_Query( [ 'blog_id' => $blog_id ] );
 				$out_sites[ $blog_id ]['user_count'] = $user_query->get_total();
 
 				// If this must be hosted on a WP-VIP site, then rewrite to use REST API.
 				switch_to_blog( $blog_id );
-				$out_sites[ $blog_id ]['url'] = site_url();
+				$out_sites[ $blog_id ]['url']  = site_url();
 				$out_sites[ $blog_id ]['name'] = get_option( 'blogname' );
 
-				$posts = new \WP_Query( 'post_status=published' );
+				$posts                               = new \WP_Query( 'post_status=published' );
 				$out_sites[ $blog_id ]['post_count'] = intval( $posts->found_posts );
 			}
 			restore_current_blog();
 		}
 
 		wp_cache_set(
-			$this->get_widget_slug(),
+			self::WIDGET_SLUG,
 			$out_sites,
 			'rest',
 			self::REFRESH_INTERVAL
@@ -153,7 +152,7 @@ class Multisite_Posts_Counter extends WP_Widget {
 	public function widget( $args, $instance ) {
 		// Check if there is a cached output
 		$widget_cache = wp_cache_get( $this->get_widget_slug(), 'widget' );
-		$info_cache = wp_cache_get( $this->get_widget_slug(), 'info' );
+		$info_cache   = wp_cache_get( $this->get_widget_slug(), 'info' );
 
 		if ( ! is_array( $widget_cache ) ) {
 			$widget_cache = [];
@@ -168,30 +167,36 @@ class Multisite_Posts_Counter extends WP_Widget {
 		}
 
 		if ( isset( $widget_cache[ $args['widget_id'] ] ) ) {
-			return print $widget_cache[ $args['widget_id'] ];
+			echo $widget_cache[ $args['widget_id'] ]; // WPCS: XSS ok.
+			return;
 		}
 
-		extract( $args, EXTR_SKIP );
+		$title = apply_filters( 'widget_title', $args['title'] );
 
-		$widget_string = $before_widget;
+		$widget_string = $args['before_widget'];
 
-		$widget_string .= '<dl class="mpc-list">' . "\n";
+		$widget_string .= <<<EOL
+			{$args['before_title']}{$title}{$args['after_title']}
+			<dl class="mpc-list">
+EOL;
 
-		foreach ( $info_cache as $info ) {
+		foreach ( $info_cache as $blog_id => $info ) {
 			$widget_string .= <<<EOL
-	<dt class="mpc-list-site">Site</dt>
-	<dd class="mpc-list-site-item">
-		<a href='{$info['url']}'><span>{$info['name']}</span></a>
+	<dt data-blog_id='{$blog_id}' class='mpc-list-site'>Site</dt>
+	<dd data-blog_id='{$blog_id}' class='mpc-list-site-item'>
+		<a class='mpc-list-site-item-link' href='{$info['url']}'>
+			{$info['name']}
+		</a>
 	</dd>
-	<dt class="mpc-list-posts">Posts</dt>
-	<dd class="mpc-list-posts-item">{$info['post_count']}</dd>
-	<dt class="mpc-list-users">Users</dt>
-	<dd class="mpc-list-users-item">{$info['user_count']}</dd>
+	<dt data-blog_id='{$blog_id}' class="mpc-list-posts">Posts</dt>
+	<dd data-blog_id='{$blog_id}' class='mpc-list-posts-item'>{$info['post_count']}</dd>
+	<dt data-blog_id='{$blog_id}' class='mpc-list-users'>Users</dt>
+	<dd data-blog_id='{$blog_id}' class='mpc-list-users-item'>{$info['user_count']}</dd>
 EOL;
 		}
-		$widget_string .= '</dl>'. "\n";
+		$widget_string .= '</dl>' . "\n";
 
-		$widget_string .= $after_widget;
+		$widget_string .= $args['after_widget'];
 
 		$cache[ $args['widget_id'] ] = $widget_string;
 
@@ -202,7 +207,7 @@ EOL;
 			self::REFRESH_INTERVAL
 		);
 
-		print $widget_string;
+		echo $widget_string; // WPCS: XSS ok.
 	}
 
 
@@ -235,14 +240,18 @@ EOL;
 	 * @param array instance The array of keys and values for the widget.
 	 */
 	public function form( $instance ) {
-		// TODO: Define default values for your variables
-		$instance = wp_parse_args(
-			(array) $instance
-		);
+		$instance = wp_parse_args( (array) $instance );
 
-		// TODO: Store the values of the widget in their own variable
-		// Display the admin form
-		include plugin_dir_path( __FILE__ ) . 'views/admin.php';
+		if ( isset( $instance['title'] ) ) {
+			$title = $instance['title'];
+		} else {
+			$title = __( 'New Title', $this->get_widget_slug() );
+		}
+
+		$widget_form = <<<EOL
+EOL;
+
+		echo $widget_form;
 	}
 
 	/**
