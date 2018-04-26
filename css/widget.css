@@ -1,0 +1,7 @@
+.mpc-list-item a:link {
+	text-decoration: underline dotted;
+}
+
+.mpc-list-item a:hover {
+	text-decoration: none;
+}

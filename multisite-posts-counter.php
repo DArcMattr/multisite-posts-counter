@@ -38,6 +38,13 @@ class Multisite_Posts_Counter extends WP_Widget {
 	const WIDGET_SLUG = 'multisite-posts-counter';
 
 	/**
+ 	 * Endpoint version.
+ 	 *
+	 * @var string
+	 */
+	const ENDPOINT_VERSION = 'v1';
+
+	/**
 	 * The time in seconds that the widget refreshes.
 	 *
 	 * Used for cache expiration and RESTful widget refreshing.
@@ -78,7 +85,9 @@ class Multisite_Posts_Counter extends WP_Widget {
 	 */
 	public function rest_api_init() : void {
 		register_rest_route(
-			'multisite-posts-counter/v1', '/site(:?/(?P<blog_id>\d+))?', [
+			self::WIDGET_SLUG . '/' . self::ENDPOINT_VERSION,
+			'/site(:?/(?P<blog_id>\d+))?',
+			[
 				'methods'  => WP_REST_Server::READABLE,
 				'callback' => function( WP_REST_Request $request ) : array {
 					$blog_id = intval( $request->get_param( 'blog_id' ) );
@@ -173,6 +182,7 @@ class Multisite_Posts_Counter extends WP_Widget {
 		$info_cache   = wp_cache_get( $this->get_widget_slug(), 'info' );
 
 		$refresh_interval = self::REFRESH_INTERVAL;
+		$endpoint         = self::WIDGET_SLUG . '/' . self::ENDPOINT_VERSION;
 
 		if ( ! is_array( $widget_cache ) ) {
 			$widget_cache = [];
@@ -197,24 +207,21 @@ class Multisite_Posts_Counter extends WP_Widget {
 
 		$widget_string .= <<<EOL
 			{$args['before_title']}{$title}{$args['after_title']}
-			<dl data-refresh='{$refresh_interval}' class='mpc-list'>
+<ul data-endpoint='{$endpoint}' data-refresh='{$refresh_interval}' class='mpc-list'>
 EOL;
 
 		foreach ( $info_cache as $blog_id => $info ) {
 			$widget_string .= <<<EOL
-	<dt data-blog_id='{$blog_id}' class='mpc-list-site'>Site</dt>
-	<dd data-blog_id='{$blog_id}' class='mpc-list-site-item'>
-		<a class='mpc-list-site-item-link' href='{$info['url']}'>
+	<li data-blog_id='{$blog_id}' class='mpc-list-item'>
+		<a class='mpc-list-item-link' href='{$info['url']}'>
 			{$info['name']}
-		</a>
-	</dd>
-	<dt data-blog_id='{$blog_id}' class="mpc-list-posts">Posts</dt>
-	<dd data-blog_id='{$blog_id}' class='mpc-list-posts-item'>{$info['post_count']}</dd>
-	<dt data-blog_id='{$blog_id}' class='mpc-list-users'>Users</dt>
-	<dd data-blog_id='{$blog_id}' class='mpc-list-users-item'>{$info['user_count']}</dd>
+		</a>, with
+		<span class='mpc-list-item-posts'>{$info['post_count']}</span> posts and
+		<span class='mpc-list-item-users'>{$info['user_count']}</span> users
+	</li>
 EOL;
 		}
-		$widget_string .= '</dl>' . "\n";
+		$widget_string .= '</ul>' . "\n";
 
 		$widget_string .= $args['after_widget'];
 
