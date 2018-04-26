@@ -35,7 +35,16 @@ class Multisite_Posts_Counter extends WP_Widget {
 	 * @since    1.0.0
 	 * @var      string
 	 */
-	protected $widget_slug = 'multisite-posts-counter';
+	const WIDGET_SLUG = 'multisite-posts-counter';
+
+	/**
+	 * The time in seconds that the widget refreshes.
+	 *
+	 * Used for cache expiration and RESTful widget refreshing.
+	 *
+	 * @var int
+	 */
+	const REFRESH_INTERVAL = 60;
 
 	/**
 	 * Specifies the classname and description, instantiates the widget,
@@ -46,10 +55,10 @@ class Multisite_Posts_Counter extends WP_Widget {
 
 		parent::__construct(
 			$this->get_widget_slug(),
-			__( 'Widget Name', $this->get_widget_slug() ),
+			__( 'Multisite Posts Counter', $this->get_widget_slug() ),
 			[
 				'classname'   => $this->get_widget_slug() . '-class',
-				'description' => __( 'Short description of the widget goes here.', $this->get_widget_slug() ),
+				'description' => __( 'Display post and user counts for all sites in network.', $this->get_widget_slug() ),
 			]
 		);
 
@@ -76,25 +85,50 @@ class Multisite_Posts_Counter extends WP_Widget {
 	 *
 	 * @return array
 	 */
-	public function get_site_posts( int $site_id = 0 ) : array {
-		$out_site = [];
-		$query    = [
+	public static function get_site_info( int $site_id = 0 ) : array {
+		$query = [
 			'public' => '1',
 		];
 
-		if ( 0 === $site_id ) {
-			$sites = get_sites( $query );
+		$out_sites = wp_cache_get( $this->get_widget_slug(), 'rest' );
+
+		if ( ! is_array( $out_sites ) ) {
+			$out_sites = [];
 		} else {
-			$query['site__in'] = $site_id;
-			$sites             = get_sites( $query );
+			return $out_sites;
 		}
 
-		foreach ( $sites as $site ) {
-			if ( '1' === $site->public ) {
-				$out_site['site_id'] = $site->site_id;
-				$out_site['url']     = $site->domain . $site->path;
-			}
+		if ( 0 !== $site_id ) {
+			$query['site__in'] = $site_id;
 		}
+
+		$sites = get_sites( $query );
+
+		if ( is_array( $sites ) ) {
+			foreach ( $sites as $site ) {
+				$blog_id = $site->blog_id;
+
+
+				$user_query = new \WP_User_Query( [ 'blog_id' => $blog_id, ] );
+				$out_sites[ $blog_id ]['user_count'] = $user_query->get_total();
+
+				// If this must be hosted on a WP-VIP site, then rewrite to use REST API.
+				switch_to_blog( $blog_id );
+				$out_sites[ $blog_id ]['url'] = site_url();
+				$out_sites[ $blog_id ]['name'] = get_option( 'blogname' );
+
+				$posts = new \WP_Query( 'post_status=published' );
+				$out_sites[ $blog_id ]['post_count'] = intval( $posts->found_posts );
+			}
+			restore_current_blog();
+		}
+
+		wp_cache_set(
+			$this->get_widget_slug(),
+			$out_sites,
+			'rest',
+			self::REFRESH_INTERVAL
+		);
 
 		return $out_sites;
 	}
@@ -107,7 +141,7 @@ class Multisite_Posts_Counter extends WP_Widget {
 	 * @return    Plugin slug variable.
 	 */
 	public function get_widget_slug() {
-		return $this->widget_slug;
+		return self::WIDGET_SLUG;
 	}
 
 	/**
@@ -118,35 +152,55 @@ class Multisite_Posts_Counter extends WP_Widget {
 	 */
 	public function widget( $args, $instance ) {
 		// Check if there is a cached output
-		$cache = wp_cache_get( $this->get_widget_slug(), 'widget' );
+		$widget_cache = wp_cache_get( $this->get_widget_slug(), 'widget' );
+		$info_cache = wp_cache_get( $this->get_widget_slug(), 'info' );
 
-		if ( ! is_array( $cache ) ) {
-			$cache = [];
+		if ( ! is_array( $widget_cache ) ) {
+			$widget_cache = [];
+		}
+
+		if ( ! is_array( $info_cache ) ) {
+			$info_cache = self::get_site_info();
 		}
 
 		if ( ! isset( $args['widget_id'] ) ) {
 			$args['widget_id'] = $this->id;
 		}
 
-		if ( isset( $cache[ $args['widget_id'] ] ) ) {
-			return print $cache[ $args['widget_id'] ];
+		if ( isset( $widget_cache[ $args['widget_id'] ] ) ) {
+			return print $widget_cache[ $args['widget_id'] ];
 		}
 
-		// Go on with your widget logic, put everything into a string and …
 		extract( $args, EXTR_SKIP );
 
 		$widget_string = $before_widget;
 
-		// TODO: Here is where you manipulate your widget's values based on their input fields
-		ob_start();
+		$widget_string .= '<dl class="mpc-list">' . "\n";
 
-		include plugin_dir_path( __FILE__ ) . 'views/widget.php';
-		$widget_string .= ob_get_clean();
+		foreach ( $info_cache as $info ) {
+			$widget_string .= <<<EOL
+	<dt class="mpc-list-site">Site</dt>
+	<dd class="mpc-list-site-item">
+		<a href='{$info['url']}'><span>{$info['name']}</span></a>
+	</dd>
+	<dt class="mpc-list-posts">Posts</dt>
+	<dd class="mpc-list-posts-item">{$info['post_count']}</dd>
+	<dt class="mpc-list-users">Users</dt>
+	<dd class="mpc-list-users-item">{$info['user_count']}</dd>
+EOL;
+		}
+		$widget_string .= '</dl>'. "\n";
+
 		$widget_string .= $after_widget;
 
 		$cache[ $args['widget_id'] ] = $widget_string;
 
-		wp_cache_set( $this->get_widget_slug(), $cache, 'widget' );
+		wp_cache_set(
+			$this->get_widget_slug(),
+			$cache,
+			'widget',
+			self::REFRESH_INTERVAL
+		);
 
 		print $widget_string;
 	}
@@ -157,6 +211,7 @@ class Multisite_Posts_Counter extends WP_Widget {
 	 */
 	public function flush_widget_cache() {
 		wp_cache_delete( $this->get_widget_slug(), 'widget' );
+		wp_cache_delete( $this->get_widget_slug(), 'rest' );
 	}
 
 	/**
@@ -180,7 +235,6 @@ class Multisite_Posts_Counter extends WP_Widget {
 	 * @param array instance The array of keys and values for the widget.
 	 */
 	public function form( $instance ) {
-
 		// TODO: Define default values for your variables
 		$instance = wp_parse_args(
 			(array) $instance
@@ -195,7 +249,11 @@ class Multisite_Posts_Counter extends WP_Widget {
 	 * Loads the Widget's text domain for localization and translation.
 	 */
 	public function widget_textdomain() : void {
-		load_plugin_textdomain( $this->get_widget_slug(), false, dirname( plugin_basename( __FILE__ ) ) . 'lang/' );
+		load_plugin_textdomain(
+			$this->get_widget_slug(),
+			false,
+			dirname( plugin_basename( __FILE__ ) ) . 'lang/'
+		);
 	}
 
 	/**
@@ -220,35 +278,49 @@ class Multisite_Posts_Counter extends WP_Widget {
 	 * Registers and enqueues admin-specific styles.
 	 */
 	public function register_admin_styles() : void {
-		wp_enqueue_style( $this->get_widget_slug() . '-admin-styles', plugins_url( 'css/admin.css', __FILE__ ) );
+		wp_enqueue_style(
+			$this->get_widget_slug() . '-admin-styles',
+			plugins_url( 'css/admin.css', __FILE__ )
+		);
 	}
 
 	/**
 	 * Registers and enqueues admin-specific JavaScript.
 	 */
 	public function register_admin_scripts() : void {
-		wp_enqueue_script( $this->get_widget_slug() . '-admin-script', plugins_url( 'js/admin.js', __FILE__ ), [ 'jquery' ] );
+		wp_enqueue_script(
+			$this->get_widget_slug() . '-admin-script',
+			plugins_url( 'js/admin.js', __FILE__ ),
+			[ 'jquery' ]
+		);
 	}
 
 	/**
 	 * Registers and enqueues widget-specific styles.
 	 */
 	public function register_widget_styles() : void {
-		wp_enqueue_style( $this->get_widget_slug() . '-widget-styles', plugins_url( 'css/widget.css', __FILE__ ) );
+		wp_enqueue_style(
+			$this->get_widget_slug() . '-widget-styles',
+			plugins_url( 'css/widget.css', __FILE__ )
+		);
 	}
 
 	/**
 	 * Registers and enqueues widget-specific scripts.
 	 */
 	public function register_widget_scripts() : void {
-		wp_enqueue_script( $this->get_widget_slug() . '-script', plugins_url( 'js/widget.js', __FILE__ ), [ 'jquery' ] );
+		wp_enqueue_script(
+			$this->get_widget_slug() . '-script',
+			plugins_url( 'js/widget.js', __FILE__ ),
+			[ 'jquery' ]
+		);
 	}
 
 	/**
 	 * Registers widget with WordPress.
 	 */
-	public function register_widget() : void {
-		register_widget( 'Multisite_Posts_Counter' );
+	public static function register_widget() : void {
+		register_widget( __CLASS__ );
 	}
 }
 
