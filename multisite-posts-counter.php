@@ -51,7 +51,7 @@ class Multisite_Posts_Counter extends WP_Widget {
 	 *
 	 * @var int
 	 */
-	const REFRESH_INTERVAL = 5;
+	const REFRESH_INTERVAL = 60;
 
 	/**
 	 * Specifies the classname and description, instantiates the widget,
