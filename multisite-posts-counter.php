@@ -62,10 +62,6 @@ class Multisite_Posts_Counter extends WP_Widget {
 			]
 		);
 
-		// Register admin styles and scripts.
-		add_action( 'admin_print_styles', [ $this, 'register_admin_styles' ] );
-		add_action( 'admin_enqueue_scripts', [ $this, 'register_admin_scripts' ] );
-
 		// Register site styles and scripts.
 		add_action( 'wp_enqueue_scripts', [ $this, 'register_widget_styles' ] );
 		add_action( 'wp_enqueue_scripts', [ $this, 'register_widget_scripts' ] );
@@ -85,7 +81,7 @@ class Multisite_Posts_Counter extends WP_Widget {
 			'multisite-posts-counter/v1', '/site(:?/(?P<blog_id>\d+))?', [
 				'methods'  => WP_REST_Server::READABLE,
 				'callback' => function( WP_REST_Request $request ) : array {
-					$blog_id = intval( $request->get_param('blog_id') );
+					$blog_id = intval( $request->get_param( 'blog_id' ) );
 					return self::get_site_info( $blog_id );
 				},
 				'args'     => [
@@ -158,9 +154,9 @@ class Multisite_Posts_Counter extends WP_Widget {
 	/**
 	 * Return the widget slug.
 	 *
-	 * @since    1.0.0
+	 * @since  1.0.0
 	 *
-	 * @return    Plugin slug variable.
+	 * @return Plugin slug variable.
 	 */
 	public function get_widget_slug() {
 		return self::WIDGET_SLUG;
@@ -169,13 +165,14 @@ class Multisite_Posts_Counter extends WP_Widget {
 	/**
 	 * Outputs the content of the widget.
 	 *
-	 * @param array args  The array of form elements.
-	 * @param array instance The current instance of the widget.
+	 * @param array $args     The array of form elements.
+	 * @param array $instance The current instance of the widget.
 	 */
 	public function widget( $args, $instance ) {
-		// Check if there is a cached output
 		$widget_cache = wp_cache_get( $this->get_widget_slug(), 'widget' );
 		$info_cache   = wp_cache_get( $this->get_widget_slug(), 'info' );
+
+		$refresh_interval = self::REFRESH_INTERVAL;
 
 		if ( ! is_array( $widget_cache ) ) {
 			$widget_cache = [];
@@ -200,7 +197,7 @@ class Multisite_Posts_Counter extends WP_Widget {
 
 		$widget_string .= <<<EOL
 			{$args['before_title']}{$title}{$args['after_title']}
-			<dl class="mpc-list">
+			<dl data-refresh='{$refresh_interval}' class='mpc-list'>
 EOL;
 
 		foreach ( $info_cache as $blog_id => $info ) {
@@ -245,22 +242,23 @@ EOL;
 	/**
 	 * Processes the widget's options to be saved.
 	 *
-	 * @param array new_instance The new instance of values to be generated via the update.
-	 * @param array old_instance The previous instance of values before the update.
+	 * @param array $new_instance The new instance of values to be generated via the update.
+	 * @param array $old_instance The previous instance of values before the update.
 	 */
 	public function update( $new_instance, $old_instance ) {
+		$instance = [];
 
-		$instance = $old_instance;
+		$instance['title'] = ! empty( $new_instance['title'] ) ?
+			strip_tags( $new_instance['title'] ) :
+			__( 'New Title', $this->get_widget_slug() );
 
-		// TODO: Here is where you update your widget's old values with the new, incoming values
 		return $instance;
-
 	}
 
 	/**
 	 * Generates the administration form for the widget.
 	 *
-	 * @param array instance The array of keys and values for the widget.
+	 * @param array $instance The array of keys and values for the widget.
 	 */
 	public function form( $instance ) {
 		$instance = wp_parse_args( (array) $instance );
@@ -271,10 +269,18 @@ EOL;
 			$title = __( 'New Title', $this->get_widget_slug() );
 		}
 
+		$widget_title_id   = $this->get_field_id( 'title' );
+		$widget_title_name = $this->get_field_name( 'title' );
+		$widget_title      = __( 'Title:', $this->get_widget_slug() );
+
 		$widget_form = <<<EOL
+<p>
+	<label for='{$widget_title_id}'>{$widget_title}</label>
+	<input type='text' class='widefat' id='{$widget_title_id}' name='{$widget_title_name}' value='{$title}'>
+</p>
 EOL;
 
-		echo $widget_form;
+		echo $widget_form; // WPCS: XSS ok.
 	}
 
 	/**
@@ -286,24 +292,6 @@ EOL;
 			false,
 			dirname( plugin_basename( __FILE__ ) ) . 'lang/'
 		);
-	}
-
-	/**
-	 * Fired when the plugin is activated.
-	 *
-	 * @param  boolean $network_wide True if WPMU superadmin uses "Network Activate" action, false if WPMU is disabled or plugin is activated on an individual blog.
-	 */
-	public static function activate( $network_wide ) {
-		// TODO define activation functionality here
-	}
-
-	/**
-	 * Fired when the plugin is deactivated.
-	 *
-	 * @param boolean $network_wide True if WPMU superadmin uses "Network Activate" action, false if WPMU is disabled or plugin is activated on an individual blog
-	 */
-	public static function deactivate( $network_wide ) {
-		// TODO define deactivation functionality here
 	}
 
 	/**
@@ -357,6 +345,3 @@ EOL;
 }
 
 add_action( 'widgets_init', [ 'Multisite_Posts_Counter', 'register_widget' ] );
-
-register_activation_hook( __FILE__, [ 'Multisite_Posts_Counter', 'activate' ] );
-register_deactivation_hook( __FILE__, [ 'Multisite_Posts_Counter', 'deactivate' ] );
