@@ -38,8 +38,8 @@ class Multisite_Posts_Counter extends WP_Widget {
 	const WIDGET_SLUG = 'multisite-posts-counter';
 
 	/**
- 	 * Endpoint version.
- 	 *
+	 * Endpoint version.
+	 *
 	 * @var string
 	 */
 	const ENDPOINT_VERSION = 'v1';
@@ -182,7 +182,7 @@ class Multisite_Posts_Counter extends WP_Widget {
 		$info_cache   = wp_cache_get( $this->get_widget_slug(), 'info' );
 
 		$refresh_interval = self::REFRESH_INTERVAL;
-		$endpoint         = self::WIDGET_SLUG . '/' . self::ENDPOINT_VERSION . '/site/' ;
+		$endpoint         = self::WIDGET_SLUG . '/' . self::ENDPOINT_VERSION . '/site/';
 
 		if ( ! is_array( $widget_cache ) ) {
 			$widget_cache = [];
