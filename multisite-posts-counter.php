@@ -3,13 +3,13 @@
  * @package   Multisite_Posts_Counter
  * @author    David Arceneaux <david@davidthemachine.org>
  * @license   GPL-2.0+
- * @link      http://example.com
+ * @link      https://github.com/darcmattr/multisite-posts-counter
  * @copyright 2018 David Arceneaux
  *
  * @wordpress-plugin
  * Plugin Name:       Multisite Posts Counter
- * Plugin URI:        @TODO
- * Description:       @TODO
+ * Plugin URI:        https://github.com/darcmattr/multisite-posts-counter
+ * Description:       A widget that shows (multi)site stats.
  * Version:           1.0.0
  * Author:            David Arceneaux <david@davidthemachine.org>
  * Author URI:        https://davidthemachine.org
@@ -18,7 +18,7 @@
  * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
  * PHP Version:       7.2
  * Domain Path:       /lang
- * GitHub Plugin URI: https://github.com/darcmattr/<repo>
+ * GitHub Plugin URI: https://github.com/darcmattr/multisite-posts-counter
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -74,10 +74,11 @@ class Multisite_Posts_Counter extends WP_Widget {
 		add_action( 'wp_enqueue_scripts', [ $this, 'register_widget_scripts' ] );
 
 		// Refreshing the widget's cached output with each new post.
-		add_action( 'save_post', [ $this, 'flush_widget_cache' ] );
+		add_action( 'add_role', [ $this, 'flush_widget_cache' ] );
 		add_action( 'deleted_post', [ $this, 'flush_widget_cache' ] );
-		add_action( 'switch_theme', [ $this, 'flush_widget_cache' ] );
 		add_action( 'rest_api_init', [ $this, 'rest_api_init' ] );
+		add_action( 'save_post', [ $this, 'flush_widget_cache' ] );
+		add_action( 'switch_theme', [ $this, 'flush_widget_cache' ] );
 	}
 
 	/**
