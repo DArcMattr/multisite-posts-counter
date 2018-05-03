@@ -307,7 +307,7 @@ EOL;
 	 *
 	 * @param boolean $network_wide True if WPMU superadmin uses "Network Activate" action, false if WPMU is disabled or plugin is activated on an individual blog.
 	 */
-	public static function deactivate( $network_wide ) {
+	public function deactivate( $network_wide ) {
 		$this->flush_widget_cache();
 	}
 
