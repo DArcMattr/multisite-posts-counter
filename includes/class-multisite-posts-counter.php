@@ -292,7 +292,7 @@ EOL;
 	public static function register_widget_styles() : void {
 		wp_enqueue_style(
 			self::WIDGET_SLUG . '-widget-styles',
-			plugins_url( 'css/widget.css', __FILE__ )
+			plugins_url( 'css/widget.css', __DIR__ )
 		);
 	}
 
@@ -302,7 +302,7 @@ EOL;
 	public static function register_widget_scripts() : void {
 		wp_enqueue_script(
 			self::WIDGET_SLUG . '-script',
-			plugins_url( 'js/widget.js', __FILE__ ),
+			plugins_url( 'js/widget.js', __DIR__ ),
 			[ 'jquery' ],
 			null,
 			true
