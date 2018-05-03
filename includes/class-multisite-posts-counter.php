@@ -179,22 +179,20 @@ class Multisite_Posts_Counter extends WP_Widget {
 
 		$widget_string = $args['before_widget'];
 
-		$url        = esc_url( $info['url'] );
-		$name       = esc_html( $info['name'] );
-		$post_count = intval( $info['post_count'] );
-		$user_count = intval( $info['user_count'] );
-
 		$widget_string .= <<<EOL
 			{$args['before_title']}{$title}{$args['after_title']}
 <ul data-endpoint='{$endpoint}' data-refresh='{$refresh_interval}' class='mpc-list'>
 EOL;
 
-		foreach ( $info_cache as $blog_id => $info ) {
+		foreach ( $site_info_cache as $blog_id => $info ) {
+			$url        = esc_url( $info['url'] );
+			$name       = esc_html( $info['name'] );
+			$post_count = intval( $info['post_count'] );
+			$user_count = intval( $info['user_count'] );
+
 			$widget_string .= <<<EOL
 	<li data-blog_id='{$blog_id}' class='mpc-list-item'>
-		<a class='mpc-list-item-link' href='{$url}'>
-			{$name}
-		</a>, with
+		<a class='mpc-list-item-link' href='{$url}'>{$name}</a>, with
 		<span class='mpc-list-item-posts'>{$post_count}</span> posts and
 		<span class='mpc-list-item-users'>{$user_count}</span> users
 	</li>
