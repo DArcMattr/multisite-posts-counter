@@ -140,8 +140,9 @@ class Multisite_Posts_Counter extends WP_Widget {
 
 				$posts                               = new \WP_Query( 'post_status=published' );
 				$out_sites[ $blog_id ]['post_count'] = intval( $posts->found_posts );
+
+				restore_current_blog();
 			}
-			restore_current_blog();
 		}
 
 		wp_cache_set(
