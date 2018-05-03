@@ -66,7 +66,7 @@ class Multisite_Posts_Counter extends WP_Widget {
 	 */
 	public function rest_api_init() : void {
 		register_rest_route(
-			self::wIDGET_SLUG . '/' . self::ENDPOINT_VERSION,
+			self::WIDGET_SLUG . '/' . self::ENDPOINT_VERSION,
 			'/site(:?/(?P<blog_id>\d+))?',
 			[
 				'methods'  => WP_REST_Server::READABLE,
