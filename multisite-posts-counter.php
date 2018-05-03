@@ -1,5 +1,7 @@
 <?php
 /**
+ * A Widget that shows (multi)site stats.
+ *
  * @package   Multisite_Posts_Counter
  * @author    David Arceneaux <david@davidthemachine.org>
  * @license   GPL-2.0+
@@ -61,10 +63,10 @@ class Multisite_Posts_Counter extends WP_Widget {
 		add_action( 'init', [ $this, 'widget_textdomain' ] );
 
 		parent::__construct(
-			'multisite-posts-counter',
+			self::WIDGET_SLUG,
 			__( 'Multisite Posts Counter', 'multisite-posts-counter' ),
 			[
-				'classname'   => 'multisite-posts-counter' . '-class',
+				'classname'   => self::WIDGET_SLUG . '-class',
 				'description' => __( 'Display post and user counts for all sites in network.', 'multisite-posts-counter' ),
 			]
 		);
@@ -86,7 +88,7 @@ class Multisite_Posts_Counter extends WP_Widget {
 	 */
 	public function rest_api_init() : void {
 		register_rest_route(
-			'multisite-posts-counter' . '/' . self::ENDPOINT_VERSION,
+			self::wIDGET_SLUG . '/' . self::ENDPOINT_VERSION,
 			'/site(:?/(?P<blog_id>\d+))?',
 			[
 				'methods'  => WP_REST_Server::READABLE,
@@ -119,7 +121,7 @@ class Multisite_Posts_Counter extends WP_Widget {
 			'public' => '1',
 		];
 
-		$out_sites = wp_cache_get( 'multisite-posts-counter', 'rest' );
+		$out_sites = wp_cache_get( self::WIDGET_SLUG, 'rest' );
 
 		if ( ! is_array( $out_sites ) ) {
 			$out_sites = [];
@@ -152,7 +154,7 @@ class Multisite_Posts_Counter extends WP_Widget {
 		}
 
 		wp_cache_set(
-			'multisite-posts-counter',
+			self::WIDGET_SLUG,
 			$out_sites,
 			'rest',
 			self::REFRESH_INTERVAL
@@ -162,28 +164,17 @@ class Multisite_Posts_Counter extends WP_Widget {
 	}
 
 	/**
-	 * Return the widget slug.
-	 *
-	 * @since  1.0.0
-	 *
-	 * @return Plugin slug variable.
-	 */
-	public function get_widget_slug() {
-		return 'multisite-posts-counter';
-	}
-
-	/**
 	 * Outputs the content of the widget.
 	 *
 	 * @param array $args     The array of form elements.
 	 * @param array $instance The current instance of the widget.
 	 */
 	public function widget( $args, $instance ) {
-		$widget_cache = wp_cache_get( 'multisite-posts-counter', 'widget' );
-		$info_cache   = wp_cache_get( 'multisite-posts-counter', 'info' );
+		$widget_cache = wp_cache_get( $this->get_widget_slug(), 'widget' );
+		$info_cache   = wp_cache_get( $this->get_widget_slug(), 'info' );
 
 		$refresh_interval = self::REFRESH_INTERVAL;
-		$endpoint         = 'multisite-posts-counter/' . self::ENDPOINT_VERSION . '/site/';
+		$endpoint         = self::WIDGET_SLUG . '/' . self::ENDPOINT_VERSION . '/site/';
 
 		if ( ! is_array( $widget_cache ) ) {
 			$widget_cache = [];
@@ -206,6 +197,11 @@ class Multisite_Posts_Counter extends WP_Widget {
 
 		$widget_string = $args['before_widget'];
 
+		$url        = esc_url( $info['url'] );
+		$name       = esc_html( $info['name'] );
+		$post_count = intval( $info['post_count'] );
+		$user_count = intval( $info['user_count'] );
+
 		$widget_string .= <<<EOL
 			{$args['before_title']}{$title}{$args['after_title']}
 <ul data-endpoint='{$endpoint}' data-refresh='{$refresh_interval}' class='mpc-list'>
@@ -214,11 +210,11 @@ EOL;
 		foreach ( $info_cache as $blog_id => $info ) {
 			$widget_string .= <<<EOL
 	<li data-blog_id='{$blog_id}' class='mpc-list-item'>
-		<a class='mpc-list-item-link' href='{$info['url']}'>
-			{$info['name']}
+		<a class='mpc-list-item-link' href='{$url}'>
+			{$name}
 		</a>, with
-		<span class='mpc-list-item-posts'>{$info['post_count']}</span> posts and
-		<span class='mpc-list-item-users'>{$info['user_count']}</span> users
+		<span class='mpc-list-item-posts'>{$post_count}</span> posts and
+		<span class='mpc-list-item-users'>{$user_count}</span> users
 	</li>
 EOL;
 		}
@@ -229,7 +225,7 @@ EOL;
 		$cache[ $args['widget_id'] ] = $widget_string;
 
 		wp_cache_set(
-			'multisite-posts-counter',
+			self::WIDGET_SLUG,
 			$cache,
 			'widget',
 			self::REFRESH_INTERVAL
@@ -243,8 +239,8 @@ EOL;
 	 * Clears out wp_cache entries for widget markup.
 	 */
 	public function flush_widget_cache() {
-		wp_cache_delete( 'multisite-posts-counter', 'widget' );
-		wp_cache_delete( 'multisite-posts-counter', 'rest' );
+		wp_cache_delete( self::WIDGET_SLUG, 'widget' );
+		wp_cache_delete( self::WIDGET_SLUG, 'rest' );
 	}
 
 	/**
@@ -277,8 +273,8 @@ EOL;
 			$title = __( 'New Title', 'multisite-posts-counter' );
 		}
 
-		$widget_title_id   = $this->get_field_id( 'title' );
-		$widget_title_name = $this->get_field_name( 'title' );
+		$widget_title_id   = esc_attr( $this->get_field_id( 'title' ) );
+		$widget_title_name = esc_html( $this->get_field_name( 'title' ) );
 		$widget_title      = __( 'Title:', 'multisite-posts-counter' );
 
 		$widget_form = <<<EOL
@@ -296,7 +292,7 @@ EOL;
 	 */
 	public function widget_textdomain() : void {
 		load_plugin_textdomain(
-			'multisite-posts-counter',
+			self::WIDGET_SLUG,
 			false,
 			dirname( plugin_basename( __FILE__ ) ) . 'lang/'
 		);
@@ -316,7 +312,7 @@ EOL;
 	 */
 	public function register_widget_styles() : void {
 		wp_enqueue_style(
-			'multisite-posts-counter' . '-widget-styles',
+			self::WIDGET_SLUG . '-widget-styles',
 			plugins_url( 'css/widget.css', __FILE__ )
 		);
 	}
@@ -326,7 +322,7 @@ EOL;
 	 */
 	public function register_widget_scripts() : void {
 		wp_enqueue_script(
-			'multisite-posts-counter-script',
+			self::WIDGET_SLUG . '-script',
 			plugins_url( 'js/widget.js', __FILE__ ),
 			[ 'jquery' ],
 			null,
