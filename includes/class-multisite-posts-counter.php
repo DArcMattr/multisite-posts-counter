@@ -22,6 +22,14 @@ class Multisite_Posts_Counter extends WP_Widget {
 	const WIDGET_SLUG = 'multisite-posts-counter';
 
 	/**
+	 * The plugin version
+	 *
+	 * @since    1.0.1
+	 * @var      string
+	 */
+	const VERSION = '1.0.1';
+
+	/**
 	 * Endpoint version.
 	 *
 	 * @var string
@@ -296,7 +304,10 @@ EOL;
 	public static function register_widget_styles() : void {
 		wp_enqueue_style(
 			self::WIDGET_SLUG . '-widget-styles',
-			plugins_url( 'css/widget.css', __DIR__ )
+			plugins_url( 'css/widget.css', __DIR__ ),
+			[],
+			self::VERSION,
+			'all'
 		);
 	}
 
@@ -308,7 +319,7 @@ EOL;
 			self::WIDGET_SLUG . '-script',
 			plugins_url( 'js/widget.js', __DIR__ ),
 			[ 'jquery' ],
-			null,
+			self::VERSION,
 			true
 		);
 	}
