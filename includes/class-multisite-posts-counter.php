@@ -53,10 +53,6 @@ class Multisite_Posts_Counter extends WP_Widget {
 			]
 		);
 
-		// Register site styles and scripts.
-		add_action( 'wp_enqueue_scripts', [ $this, 'register_widget_styles' ] );
-		add_action( 'wp_enqueue_scripts', [ $this, 'register_widget_scripts' ] );
-
 		// Refreshing the widget's cached output with each new post.
 		add_action( 'add_role', [ $this, 'flush_widget_cache' ] );
 		add_action( 'deleted_post', [ $this, 'flush_widget_cache' ] );
@@ -80,8 +76,11 @@ class Multisite_Posts_Counter extends WP_Widget {
 				},
 				'args'     => [
 					'blog_id' => [
-						'validate_callback' => function( $param, $request, $key ) {
-							return is_numeric( $param );
+						'type'              => 'integer',
+						'validate_callback' => function( $param ) {
+							if ( false !== get_site( $param ) ) {
+								return is_numeric( $param );
+							}
 						},
 					],
 				],
@@ -218,7 +217,7 @@ EOL;
 	/**
 	 * Clears out wp_cache entries for widget markup.
 	 */
-	public function flush_widget_cache() {
+	public static function flush_widget_cache() {
 		wp_cache_delete( self::WIDGET_SLUG, 'widget' );
 		wp_cache_delete( self::WIDGET_SLUG, 'rest' );
 	}
@@ -290,7 +289,7 @@ EOL;
 	/**
 	 * Registers and enqueues widget-specific styles.
 	 */
-	public function register_widget_styles() : void {
+	public static function register_widget_styles() : void {
 		wp_enqueue_style(
 			self::WIDGET_SLUG . '-widget-styles',
 			plugins_url( 'css/widget.css', __FILE__ )
@@ -300,7 +299,7 @@ EOL;
 	/**
 	 * Registers and enqueues widget-specific scripts.
 	 */
-	public function register_widget_scripts() : void {
+	public static function register_widget_scripts() : void {
 		wp_enqueue_script(
 			self::WIDGET_SLUG . '-script',
 			plugins_url( 'js/widget.js', __FILE__ ),
@@ -315,7 +314,9 @@ EOL;
 	 */
 	public static function register_widget() : void {
 		register_widget( __CLASS__ );
+
+		// Register site styles and scripts.
+		add_action( 'wp_enqueue_scripts', [ __CLASS__, 'register_widget_styles' ] );
+		add_action( 'wp_enqueue_scripts', [ __CLASS__, 'register_widget_scripts' ] );
 	}
 }
-
-
