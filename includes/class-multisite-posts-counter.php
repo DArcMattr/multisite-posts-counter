@@ -134,12 +134,14 @@ class Multisite_Posts_Counter extends WP_Widget {
 			restore_current_blog();
 		}
 
-		wp_cache_set(
-			self::WIDGET_SLUG,
-			$out_sites,
-			'rest',
-			self::REFRESH_INTERVAL
-		);
+		if ( ! is_customize_preview() ) {
+			wp_cache_set(
+				self::WIDGET_SLUG,
+				$out_sites,
+				'rest',
+				self::REFRESH_INTERVAL
+			);
+		}
 
 		return $out_sites;
 	}
@@ -203,12 +205,14 @@ EOL;
 
 		$cache[ $args['widget_id'] ] = $widget_string;
 
-		wp_cache_set(
-			self::WIDGET_SLUG,
-			$cache,
-			'widget',
-			self::REFRESH_INTERVAL
-		);
+		if ( ! is_customizer_preview() ) {
+			wp_cache_set(
+				self::WIDGET_SLUG,
+				$cache,
+				'widget',
+				self::REFRESH_INTERVAL
+			);
+		}
 
 		echo $widget_string; // WPCS: XSS ok.
 	}
