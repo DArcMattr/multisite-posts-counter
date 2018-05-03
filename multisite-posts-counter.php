@@ -12,7 +12,7 @@
  * Plugin Name:       Multisite Posts Counter
  * Plugin URI:        https://github.com/darcmattr/multisite-posts-counter
  * Description:       A widget that shows (multi)site stats.
- * Version:           1.0.0
+ * Version:           1.0.1
  * Author:            David Arceneaux <david@davidthemachine.org>
  * Author URI:        https://davidthemachine.org
  * Text Domain:       multisite-posts-counter

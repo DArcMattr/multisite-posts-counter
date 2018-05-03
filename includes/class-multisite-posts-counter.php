@@ -244,7 +244,7 @@ EOL;
 		$instance = [];
 
 		$instance['title'] = ! empty( $new_instance['title'] ) ?
-			strip_tags( $new_instance['title'] ) :
+			sanitize_text_field( $new_instance['title'] ) :
 			__( 'New Title', 'multisite-posts-counter' );
 
 		return $instance;
