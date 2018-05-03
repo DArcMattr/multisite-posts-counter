@@ -142,14 +142,12 @@ class Multisite_Posts_Counter extends WP_Widget {
 			restore_current_blog();
 		}
 
-		if ( ! is_customize_preview() ) {
-			wp_cache_set(
-				self::WIDGET_SLUG,
-				$out_sites,
-				'rest',
-				self::REFRESH_INTERVAL
-			);
-		}
+		wp_cache_set(
+			self::WIDGET_SLUG,
+			$out_sites,
+			'rest',
+			self::REFRESH_INTERVAL
+		);
 
 		return $out_sites;
 	}
@@ -179,7 +177,10 @@ class Multisite_Posts_Counter extends WP_Widget {
 			$args['widget_id'] = $this->id;
 		}
 
-		if ( isset( $widget_markup_cache[ $args['widget_id'] ] ) ) {
+		if (
+			! is_customizer_preview() &&
+			isset( $widget_markup_cache[ $args['widget_id'] ] )
+		) {
 			echo $widget_markup_cache[ $args['widget_id'] ]; // WPCS: XSS ok.
 			return;
 		}
