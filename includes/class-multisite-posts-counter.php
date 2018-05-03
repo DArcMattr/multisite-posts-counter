@@ -64,13 +64,15 @@ class Multisite_Posts_Counter extends WP_Widget {
 		// Refreshing the widget's cached output with each new post.
 		add_action( 'add_role', [ $this, 'flush_widget_cache' ] );
 		add_action( 'deleted_post', [ $this, 'flush_widget_cache' ] );
-		add_action( 'rest_api_init', [ $this, 'rest_api_init' ] );
 		add_action( 'save_post', [ $this, 'flush_widget_cache' ] );
 		add_action( 'switch_theme', [ $this, 'flush_widget_cache' ] );
+		add_action( 'rest_api_init', [ $this, 'rest_api_init' ] );
 	}
 
 	/**
 	 * Hook into REST API
+	 *
+	 * @action rest_api_init
 	 */
 	public function rest_api_init() : void {
 		register_rest_route(
@@ -229,6 +231,11 @@ EOL;
 
 	/**
 	 * Clears out wp_cache entries for widget markup.
+	 *
+	 * @action deleted_post
+	 * @action add_role
+	 * @action save_post
+	 * @action switch_theme
 	 */
 	public static function flush_widget_cache() {
 		wp_cache_delete( self::WIDGET_SLUG, 'widget' );
@@ -294,6 +301,7 @@ EOL;
 	 * Fired when the plugin is deactivated.
 	 *
 	 * @param boolean $network_wide True if WPMU superadmin uses "Network Activate" action, false if WPMU is disabled or plugin is activated on an individual blog.
+	 * @action register_deactivation_hook
 	 */
 	public function deactivate( $network_wide ) {
 		$this->flush_widget_cache();
@@ -301,6 +309,8 @@ EOL;
 
 	/**
 	 * Registers and enqueues widget-specific styles.
+	 *
+	 * @action wp_enqueue_scripts
 	 */
 	public static function register_widget_styles() : void {
 		wp_enqueue_style(
@@ -314,6 +324,8 @@ EOL;
 
 	/**
 	 * Registers and enqueues widget-specific scripts.
+	 *
+	 * @action wp_enqueue_scripts
 	 */
 	public static function register_widget_scripts() : void {
 		wp_enqueue_script(
