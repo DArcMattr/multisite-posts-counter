@@ -180,7 +180,7 @@ class Multisite_Posts_Counter extends WP_Widget {
 		}
 
 		if (
-			! is_customizer_preview() &&
+			! is_customize_preview() &&
 			isset( $widget_markup_cache[ $args['widget_id'] ] )
 		) {
 			echo $widget_markup_cache[ $args['widget_id'] ]; // WPCS: XSS ok.
@@ -216,7 +216,7 @@ EOL;
 
 		$cache[ $args['widget_id'] ] = $widget_string;
 
-		if ( ! is_customizer_preview() ) {
+		if ( ! is_customize_preview() ) {
 			wp_cache_set(
 				self::WIDGET_SLUG,
 				$cache,
