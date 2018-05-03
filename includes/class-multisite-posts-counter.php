@@ -152,26 +152,26 @@ class Multisite_Posts_Counter extends WP_Widget {
 	 * @param array $instance The current instance of the widget.
 	 */
 	public function widget( $args, $instance ) {
-		$widget_cache = wp_cache_get( $this->get_widget_slug(), 'widget' );
-		$info_cache   = wp_cache_get( $this->get_widget_slug(), 'info' );
+		$widget_markup_cache = wp_cache_get( self::WIDGET_SLUG, 'widget' );
+		$site_info_cache     = wp_cache_get( self::WIDGET_SLUG, 'info' );
 
 		$refresh_interval = self::REFRESH_INTERVAL;
 		$endpoint         = self::WIDGET_SLUG . '/' . self::ENDPOINT_VERSION . '/site/';
 
-		if ( ! is_array( $widget_cache ) ) {
-			$widget_cache = [];
+		if ( ! is_array( $widget_markup_cache ) ) {
+			$widget_markup_cache = [];
 		}
 
-		if ( ! is_array( $info_cache ) ) {
-			$info_cache = self::get_site_info();
+		if ( ! is_array( $site_info_cache ) ) {
+			$site_info_cache = self::get_site_info();
 		}
 
 		if ( ! isset( $args['widget_id'] ) ) {
 			$args['widget_id'] = $this->id;
 		}
 
-		if ( isset( $widget_cache[ $args['widget_id'] ] ) ) {
-			echo $widget_cache[ $args['widget_id'] ]; // WPCS: XSS ok.
+		if ( isset( $widget_markup_cache[ $args['widget_id'] ] ) ) {
+			echo $widget_markup_cache[ $args['widget_id'] ]; // WPCS: XSS ok.
 			return;
 		}
 
